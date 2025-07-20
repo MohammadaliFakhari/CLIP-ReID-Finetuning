@@ -1,0 +1,22 @@
+/config/__pycache__
+/datasets/__pycache__
+/loss/__pycache__
+/model/__pycache__
+/processor/__pycache__
+/solver/__pycache__
+/utils/__pycache__
+/model/backbones/__pycache__
+/model/clip/__pycache__
+/Visualise
+/csvs
+/dataset
+/easy-fn-visualise
+fn-visualise/
+fp-visualise/
+gender_master_id (1).csv
+hard-tp-visualise/
+marketoutput/
+output/
+vit-output-market/
+vit-output/
+BSc-output/
