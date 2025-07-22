@@ -73,7 +73,7 @@ if __name__ == '__main__':
     # optimizer_1stage = make_optimizer_1stage(cfg, model)
     # scheduler_1stage = create_scheduler(optimizer_1stage, num_epochs = cfg.SOLVER.STAGE1.MAX_EPOCHS, lr_min = cfg.SOLVER.STAGE1.LR_MIN, \
     #                 warmup_lr_init = cfg.SOLVER.STAGE1.WARMUP_LR_INIT, warmup_t = cfg.SOLVER.STAGE1.WARMUP_EPOCHS, noise_range = None)
-    is_train_stage1 = True
+    is_train_stage1 = False
     if is_train_stage1:
         optimizer_1stage = make_optimizer_1stage(cfg, model)
         scheduler_1stage = create_scheduler(optimizer_1stage, num_epochs = cfg.SOLVER.STAGE1.MAX_EPOCHS, lr_min = cfg.SOLVER.STAGE1.LR_MIN, \

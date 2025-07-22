@@ -5,6 +5,8 @@ from collections import OrderedDict
 from .clip.simple_tokenizer import SimpleTokenizer as _Tokenizer
 _tokenizer = _Tokenizer()
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
+from loralib.utils import mark_only_lora_as_trainable, apply_lora, get_lora_parameters, lora_state_dict, save_lora, load_lora
+from loralib import layers as lora_layers
 
 def weights_init_kaiming(m):
     classname = m.__class__.__name__
@@ -77,6 +79,7 @@ class build_transformer(nn.Module):
     def __init__(self, num_classes, camera_num, view_num, cfg):
         super(build_transformer, self).__init__()
         self.trainer = 'MaPLe'
+        self.use_lora = cfg.MODEL.USE_LORA
         self.model_name = cfg.MODEL.NAME
         self.cos_layer = cfg.MODEL.COS_LAYER
         self.neck = cfg.MODEL.NECK
@@ -112,6 +115,11 @@ class build_transformer(nn.Module):
 
         self.image_encoder = clip_model.visual
         self.logit_scale = clip_model.logit_scale
+
+        if self.use_lora:
+            list_lora_layers = apply_lora(cfg, self.image_encoder, clip_model)
+        # if cfg.eval_only:
+        #     load_lora(cfg, list_lora_layers)
 
         if cfg.MODEL.SIE_CAMERA and cfg.MODEL.SIE_VIEW:
             self.cv_embed = nn.Parameter(torch.zeros(camera_num * view_num, self.in_planes))
@@ -347,12 +355,12 @@ class MaplePromptLearner(nn.Module):
             nn.init.normal_(prompt, std=0.02)
 
         # -------------------------------------------------------------------------------------
-        # self.compound_per_id_prompts_text = nn.ParameterList([
-        #     nn.Parameter(torch.empty(num_class, n_cls_ctx_per_id, ctx_dim, dtype=dtype))
-        #     for _ in range(self.compound_prompts_depth - 1)
-        # ])
-        # for prompt in self.compound_per_id_prompts_text:
-        #     nn.init.normal_(prompt, std=0.02)
+        self.compound_per_id_prompts_text = nn.ParameterList([
+            nn.Parameter(torch.empty(num_class, n_cls_ctx_per_id, ctx_dim, dtype=dtype))
+            for _ in range(self.compound_prompts_depth - 1)
+        ])
+        for prompt in self.compound_per_id_prompts_text:
+            nn.init.normal_(prompt, std=0.02)
         # -------------------------------------------------------------------------------------
         # self.vision_compound_prompt_projections = nn.ModuleList([
         #     nn.Linear(ctx_dim, 768)
@@ -408,7 +416,7 @@ class MaplePromptLearner(nn.Module):
         #     text_deep_per_id_prompts.append(layer(self.compound_per_id_prompts_text[i][label]))
 
         for i in range(self.compound_prompts_depth-1):
-            text_deep_per_id_prompts.append(cls_ctx_per_id)
+            text_deep_per_id_prompts.append(self.compound_per_id_prompts_text[i][label])
 
         # for i, layer in enumerate(self.vision_compound_prompt_projections):
         #     visual_deep_prompts.append(layer(self.compound_prompts_text[i]))

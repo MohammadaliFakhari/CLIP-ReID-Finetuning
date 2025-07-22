@@ -53,11 +53,6 @@ def do_train_stage2(cfg,
     from datetime import timedelta
     all_start_time = time.monotonic()
 
-    man_ids = list(pd.read_csv('/home/vision/Fakhari/CLIP-ReID-finetuning/csvs/man.csv')['master_id'])
-    woman_ids = list(pd.read_csv('/home/vision/Fakhari/CLIP-ReID-finetuning/csvs/woman.csv')['master_id'])
-
-    all_gender = [man_ids, woman_ids]
-
     # train
     batch = cfg.SOLVER.STAGE2.IMS_PER_BATCH
     i_ter = num_classes // batch
@@ -100,7 +95,9 @@ def do_train_stage2(cfg,
                 target_view = target_view.to(device)
             else: 
                 target_view = None
-            with amp.autocast(enabled=True):
+            # with amp.autocast(enabled=True):
+            #     text_features = model(label = target, get_text = True)
+            with amp.autocast(enabled=True, dtype=torch.float16):
                 score, feat, image_features = model(x = img, label = target, cam_label=target_cam, view_label=target_view)
                 logits = image_features @ text_features.t()
                 loss = loss_fn(score, feat, target, target_cam, logits)

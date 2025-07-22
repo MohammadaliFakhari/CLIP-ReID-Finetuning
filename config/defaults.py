@@ -62,6 +62,18 @@ _C.MODEL.SIE_COE = 3.0
 _C.MODEL.SIE_CAMERA = False
 _C.MODEL.SIE_VIEW = False
 
+_C.MODEL.USE_LORA = False
+
+_C.encoder = 'vision'
+_C.position = 'all'
+_C.params = ['q', 'k', 'v']
+_C.r = 2
+_C.alpha = 1
+_C.dropout_rate = 0.25
+_C.backbone = 'ViT-B/16'
+_C.eval_only = False
+
+
 # -----------------------------------------------------------------------------
 # INPUT
 # -----------------------------------------------------------------------------

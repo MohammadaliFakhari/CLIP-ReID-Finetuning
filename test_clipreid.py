@@ -41,6 +41,7 @@ if __name__ == "__main__":
     train_loader, train_loader_normal, val_loader, num_query, num_classes, camera_num, view_num = make_dataloader(cfg)
 
     model = make_model(cfg, num_class=num_classes, camera_num=camera_num, view_num = view_num)
+    # if not model.use_lora:
     model.load_param(cfg.TEST.WEIGHT)
 
     if cfg.DATASETS.NAMES == 'VehicleID':

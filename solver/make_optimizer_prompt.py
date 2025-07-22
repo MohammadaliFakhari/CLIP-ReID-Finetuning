@@ -1,11 +1,9 @@
 import torch
-import logging
 
 
 def make_optimizer_1stage(cfg, model):
     params = []
     keys = []
-    logger = logging.getLogger("transreid.train")
     for key, value in model.named_parameters():
         if "prompt_learner" in key:
             lr = cfg.SOLVER.STAGE1.BASE_LR
@@ -18,9 +16,6 @@ def make_optimizer_1stage(cfg, model):
         optimizer = torch.optim.AdamW(params, lr=cfg.SOLVER.STAGE1.BASE_LR, weight_decay=cfg.SOLVER.STAGE1.WEIGHT_DECAY)
     else:
         optimizer = getattr(torch.optim, cfg.SOLVER.STAGE1.OPTIMIZER_NAME)(params)
-
-    # logger.info(params)
-    
     return optimizer
 
 
@@ -31,10 +26,17 @@ def make_optimizer_2stage(cfg, model, center_criterion):
     for key, value in model.named_parameters():
         if "text_encoder" in key:
             value.requires_grad_(False)
-            continue   
-        if "prompt_learner" in key:
+            continue 
+        if 'lora_' not in key and ('classifier' not in key and 'classifier_proj' not in key \
+                                   and 'bottleneck' not in key and 'bottleneck_proj' not in key):
             value.requires_grad_(False)
             continue
+        # if "text_encoder" in key:
+        #     value.requires_grad_(False)
+        #     continue   
+        # if "prompt_learner" in key:
+        #     value.requires_grad_(False)
+        #     continue
         if not value.requires_grad:
             continue
         lr = cfg.SOLVER.STAGE2.BASE_LR
