@@ -24,19 +24,21 @@ def make_optimizer_2stage(cfg, model, center_criterion):
     params = []
     keys = []
     for key, value in model.named_parameters():
-        if "text_encoder" in key:
-            value.requires_grad_(False)
-            continue 
-        if 'lora_' not in key and ('classifier' not in key and 'classifier_proj' not in key \
-                                   and 'bottleneck' not in key and 'bottleneck_proj' not in key):
-            value.requires_grad_(False)
-            continue
-        # if "text_encoder" in key:
-        #     value.requires_grad_(False)
-        #     continue   
-        # if "prompt_learner" in key:
-        #     value.requires_grad_(False)
-        #     continue
+        if cfg.MODEL.USE_LORA:
+            if "text_encoder" in key:
+                value.requires_grad_(False)
+                continue 
+            if 'lora_' not in key and ('classifier' not in key and 'classifier_proj' not in key \
+                                    and 'bottleneck' not in key and 'bottleneck_proj' not in key and 'ln_' not in key):
+                value.requires_grad_(False)
+                continue
+        else:
+            if "text_encoder" in key:
+                value.requires_grad_(False)
+                continue   
+            if "prompt_learner" in key:
+                value.requires_grad_(False)
+                continue
         if not value.requires_grad:
             continue
         lr = cfg.SOLVER.STAGE2.BASE_LR

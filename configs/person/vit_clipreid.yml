@@ -2,8 +2,8 @@ encoder: 'vision'
 position: 'all'
 params: ['q', 'k', 'v', 'o']
 r: 16
-alpha: 3
-dropout_rate: 0.0
+alpha: 4
+dropout_rate: 0.15
 backbone: 'ViT-B/16'
 eval_only: True
 MODEL:
@@ -53,7 +53,7 @@ SOLVER:
   STAGE2:
     IMS_PER_BATCH: 64
     OPTIMIZER_NAME: "Adam"
-    BASE_LR: 0.0005
+    BASE_LR: 0.0006
     WARMUP_METHOD: 'linear'
     WARMUP_ITERS: 10
     WARMUP_FACTOR: 0.1

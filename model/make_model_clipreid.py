@@ -146,7 +146,6 @@ class build_transformer(nn.Module):
         maple = True if self.trainer == 'MaPLe' else False
         if get_text == True:
             if maple:
-                # prompts, _, _, deep_compound_prompts_text, _, _, cls_ctx_per_id = self.prompt_learner(label)
                 prompts, deep_compound_prompts_text, cls_ctx_per_id = self.prompt_learner(label)
                 text_features = self.text_encoder(prompts, self.prompt_learner.tokenized_prompts, deep_compound_prompts_text, cls_ctx_per_id)
                 return text_features
@@ -156,16 +155,6 @@ class build_transformer(nn.Module):
                 return text_features
 
         if get_image == True:
-            # if maple:
-            #     prompts, shared_ctx, shared_ctx_per_id, deep_compound_prompts_text, deep_compound_prompts_vision, visual_deep_prompts_per_id, _ = self.prompt_learner(label)
-            #     image_features_last, image_features, image_features_proj = self.image_encoder(x, shared_ctx=shared_ctx, 
-            #     compound_deeper_prompts=deep_compound_prompts_vision, visual_deep_prompts_per_id=visual_deep_prompts_per_id, shared_ctx_per_id=shared_ctx_per_id)
-
-            #     # prompts, shared_ctx, deep_compound_prompts_text, deep_compound_prompts_vision, _ = self.prompt_learner(label)
-            #     # image_features_last, image_features, image_features_proj = self.image_encoder(x, shared_ctx=shared_ctx, 
-            #     # compound_deeper_prompts=deep_compound_prompts_vision)
-            # else:
-            #     image_features_last, image_features, image_features_proj = self.image_encoder(x)
             image_features_last, image_features, image_features_proj = self.image_encoder(x)
             if self.model_name == 'RN50':
                 return image_features_proj[0]
@@ -187,16 +176,6 @@ class build_transformer(nn.Module):
                 cv_embed = self.sie_coe * self.cv_embed[view_label]
             else:
                 cv_embed = None
-            # if maple and label != None:
-            #     prompts, shared_ctx, shared_ctx_per_id, deep_compound_prompts_text, deep_compound_prompts_vision, visual_deep_prompts_per_id, _ = self.prompt_learner(label)
-            #     image_features_last, image_features, image_features_proj = self.image_encoder(x, shared_ctx=shared_ctx, 
-            #     compound_deeper_prompts=deep_compound_prompts_vision, visual_deep_prompts_per_id=visual_deep_prompts_per_id, shared_ctx_per_id=shared_ctx_per_id)
-
-            #     # prompts, shared_ctx,  deep_compound_prompts_text, deep_compound_prompts_vision, _ = self.prompt_learner(label)
-            #     # image_features_last, image_features, image_features_proj = self.image_encoder(x, shared_ctx=shared_ctx, 
-            #     # compound_deeper_prompts=deep_compound_prompts_vision)
-            # else:
-            #     image_features_last, image_features, image_features_proj = self.image_encoder(x, cv_emb=cv_embed)
             image_features_last, image_features, image_features_proj = self.image_encoder(x, cv_emb=cv_embed)
             img_feature_last = image_features_last[:,0]
             img_feature = image_features[:,0]
@@ -336,9 +315,6 @@ class MaplePromptLearner(nn.Module):
         nn.init.normal_(cls_vector, std=0.02)
         self.cls_vector = nn.Parameter(cls_vector)
 
-        # self.proj = nn.Linear(ctx_dim, 768)
-        # self.vision_proj_per_id = nn.Linear(ctx_dim, 768)
-
         # -------------------------------------------------------------------------------------
         # self.proj_per_id = nn.Linear(reduced_ctx_dim, 512)
         # self.text_proj = nn.Linear(reduced_ctx_dim, 512)
@@ -361,16 +337,6 @@ class MaplePromptLearner(nn.Module):
         ])
         for prompt in self.compound_per_id_prompts_text:
             nn.init.normal_(prompt, std=0.02)
-        # -------------------------------------------------------------------------------------
-        # self.vision_compound_prompt_projections = nn.ModuleList([
-        #     nn.Linear(ctx_dim, 768)
-        #     for _ in range(self.compound_prompts_depth - 1)
-        # ])
-
-        # self.vision_compound_prompt_projections_per_id = nn.ModuleList([
-        #     nn.Linear(ctx_dim, 768)
-        #     for _ in range(self.compound_prompts_depth - 1)
-        # ])
         # -------------------------------------------------------------------------------------
         # self.compound_prompt_projections = nn.ModuleList([
         #     nn.Linear(reduced_ctx_dim, 512)
@@ -417,18 +383,5 @@ class MaplePromptLearner(nn.Module):
 
         for i in range(self.compound_prompts_depth-1):
             text_deep_per_id_prompts.append(self.compound_per_id_prompts_text[i][label])
-
-        # for i, layer in enumerate(self.vision_compound_prompt_projections):
-        #     visual_deep_prompts.append(layer(self.compound_prompts_text[i]))
-        # for i in range(self.compound_prompts_depth-1):
-        #     visual_deep_prompts_per_id.append(self.vision_proj_per_id(cls_ctx_per_id))
-        # for i, layer in enumerate(self.vision_compound_prompt_projections_per_id):
-        #     visual_deep_prompts_per_id.append(layer(self.compound_per_id_prompts_text[i][label]))
         # --------------------------------------------------------------------------------
-
-
-        # return prompts, self.proj(self.cls_vector), self.vision_proj_per_id(cls_ctx_per_id), self.compound_prompts_text, \
-        # visual_deep_prompts, visual_deep_prompts_per_id, text_deep_per_id_prompts
-        # return prompts, self.proj(self.cls_vector), self.compound_prompts_text, \
-        # visual_deep_prompts, text_deep_per_id_prompts
         return prompts, self.compound_prompts_text, text_deep_per_id_prompts
