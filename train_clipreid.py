@@ -73,7 +73,7 @@ if __name__ == '__main__':
     # optimizer_1stage = make_optimizer_1stage(cfg, model)
     # scheduler_1stage = create_scheduler(optimizer_1stage, num_epochs = cfg.SOLVER.STAGE1.MAX_EPOCHS, lr_min = cfg.SOLVER.STAGE1.LR_MIN, \
     #                 warmup_lr_init = cfg.SOLVER.STAGE1.WARMUP_LR_INIT, warmup_t = cfg.SOLVER.STAGE1.WARMUP_EPOCHS, noise_range = None)
-    is_train_stage1 = False
+    is_train_stage1 = True
     if is_train_stage1:
         optimizer_1stage = make_optimizer_1stage(cfg, model)
         scheduler_1stage = create_scheduler(optimizer_1stage, num_epochs = cfg.SOLVER.STAGE1.MAX_EPOCHS, lr_min = cfg.SOLVER.STAGE1.LR_MIN, \
@@ -87,7 +87,7 @@ if __name__ == '__main__':
             args.local_rank
         )
     else:
-        model.load_param('/home/vision/Fakhari/CLIP-ReID-finetuning/BSc-output/market-maple6/ViT-B-16_stage1_120.pth') 
+        model.load_param('/home/vision/Fakhari/CLIP-ReID-finetuning/BSc-output/dukemtmc-maple2/ViT-B-16_stage1_120.pth') 
 
     optimizer_2stage, optimizer_center_2stage = make_optimizer_2stage(cfg, model, center_criterion)
     scheduler_2stage = WarmupMultiStepLR(optimizer_2stage, cfg.SOLVER.STAGE2.STEPS, cfg.SOLVER.STAGE2.GAMMA, cfg.SOLVER.STAGE2.WARMUP_FACTOR,

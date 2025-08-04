@@ -62,3 +62,4 @@ def make_optimizer_2stage(cfg, model, center_criterion):
     optimizer_center = torch.optim.SGD(center_criterion.parameters(), lr=cfg.SOLVER.STAGE2.CENTER_LR)
 
     return optimizer, optimizer_center
+

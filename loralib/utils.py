@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from typing import Dict
 
-from .layers import LoRALayer, PlainMultiheadAttentionLoRA
+from .layers import LoRALayer, PlainMultiheadAttentionLoRA, LinearLoRA
 
 INDEX_POSITIONS_TEXT = {
     'top1': [11],
@@ -131,6 +131,17 @@ def apply_lora(args, image_encoder, model):
                             submodule, enable_lora=args.params, r=args.r, lora_alpha=args.alpha, dropout_rate=args.dropout_rate)
                         setattr(block, name, new_multi_head_lora)
                         list_lora_layers.append(new_multi_head_lora)
+                    elif name == "mlp" and 'mlp' in args.params:
+                        for mlp_name, mlp_layer in submodule.named_children():
+                            if isinstance(mlp_layer, nn.Linear):
+                                lora_layer = LinearLoRA(
+                                    existing_linear=mlp_layer,
+                                    r=args.r,
+                                    lora_alpha=args.alpha,
+                                    dropout_rate=args.dropout_rate,
+                                )
+                                setattr(submodule, mlp_name, lora_layer)
+                                list_lora_layers.append(lora_layer)
     return list_lora_layers
 
 

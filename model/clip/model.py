@@ -203,6 +203,7 @@ class ResidualAttentionBlock_MaPLe(nn.Module):
         self.text_layer = text_layer
         self.attn_mask = attn_mask
         self.compound_prompt_nctx = design_details['maple_length']
+        self.compound_prompt_nctx_per_id = design_details['maple_length_per_id']
         if i == 0:
             self.first_layer = True
         else:
@@ -240,7 +241,7 @@ class ResidualAttentionBlock_MaPLe(nn.Module):
                     else:
                         if not (counter > len(compound_prompts_deeper) - 1):
                             prefix = x[:1 + 4, :, :]
-                            suffix = x[1 + 4 + self.compound_prompt_nctx + 1:, :, :]
+                            suffix = x[1 + 4 + self.compound_prompt_nctx + self.compound_prompt_nctx_per_id:, :, :]
                             textual_context = compound_prompts_deeper[counter]
                             textual_context = textual_context.expand(x.shape[1], -1, -1).permute(1, 0, 2).half()
                             cls_ctx_per_id_context = cls_ctx_per_id[counter].permute(1, 0, 2).half()

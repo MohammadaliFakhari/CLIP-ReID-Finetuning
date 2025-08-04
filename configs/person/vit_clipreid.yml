@@ -3,7 +3,7 @@ position: 'all'
 params: ['q', 'k', 'v', 'o']
 r: 16
 alpha: 4
-dropout_rate: 0.15
+dropout_rate: 0.05
 backbone: 'ViT-B/16'
 eval_only: True
 MODEL:
@@ -14,9 +14,9 @@ MODEL:
   NAME: 'ViT-B-16'
   STRIDE_SIZE: [16, 16]
   ID_LOSS_WEIGHT : 0.25
-  TRIPLET_LOSS_WEIGHT : 1.0
-  I2T_LOSS_WEIGHT : 1.0
-  USE_LORA: True
+  TRIPLET_LOSS_WEIGHT: 1.0
+  I2T_LOSS_WEIGHT: 1.0
+  USE_LORA: False
   # SIE_CAMERA: True
   # SIE_COE : 1.0
 
@@ -53,7 +53,7 @@ SOLVER:
   STAGE2:
     IMS_PER_BATCH: 64
     OPTIMIZER_NAME: "Adam"
-    BASE_LR: 0.0006
+    BASE_LR: 0.000005
     WARMUP_METHOD: 'linear'
     WARMUP_ITERS: 10
     WARMUP_FACTOR: 0.1
@@ -78,17 +78,17 @@ TEST:
   FEAT_NORM: 'yes'
 
 DATASETS:
-  NAMES: ('market1501')
-  ROOT_DIR: ('/home/vision/Repo/CLIP-ReID/dataset/market')
-  # NAMES: ('iust')
-  # ROOT_DIR: ('/home/vision/Repo/CLIP-ReID/dataset/iust')
+  # NAMES: ('market1501')
+  # ROOT_DIR: ('/home/vision/Repo/CLIP-ReID/dataset/market')
+  NAMES: ('iust')
+  ROOT_DIR: ('/home/vision/Repo/CLIP-ReID/dataset/iust')
   # NAMES: ('iust')
   # ROOT_DIR: ('/home/vision/Repo/CLIP-ReID/dataset/iust')
   # NAMES: ('dukemtmc')
   # ROOT_DIR: ('/home/vision/Repo/CLIP-ReID/dataset/DukeMTMC-reID')
   # NAMES: ('msmt17')
   # ROOT_DIR: ('/home/vision/Repo/CLIP-ReID/dataset/msmt17')
-OUTPUT_DIR: '/home/vision/Fakhari/CLIP-ReID-finetuning/BSc-output/market-maple6'
+OUTPUT_DIR: '/home/vision/Fakhari/CLIP-ReID-finetuning/BSc-output/iust-maple6'
 
 #   NAMES: ('destre')
 #   ROOT_DIR: ('/home/vision/Repo/CLIP-ReID/dataset/destre')

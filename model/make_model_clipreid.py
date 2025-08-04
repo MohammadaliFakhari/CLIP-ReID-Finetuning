@@ -117,7 +117,7 @@ class build_transformer(nn.Module):
         self.logit_scale = clip_model.logit_scale
 
         if self.use_lora:
-            list_lora_layers = apply_lora(cfg, self.image_encoder, clip_model)
+            self.list_lora_layers = apply_lora(cfg, self.image_encoder, clip_model)
         # if cfg.eval_only:
         #     load_lora(cfg, list_lora_layers)
 
@@ -232,7 +232,8 @@ def load_clip_to_cpu(backbone_name, h_resolution, w_resolution, vision_stride_si
                       "vision_depth": 0,
                       "language_depth": 0, "vision_ctx": 0,
                       "language_ctx": 0,
-                      "maple_length": 2}
+                      "maple_length": 2,
+                      "maple_length_per_id": 1}
 
     model = clip.build_model(state_dict or model.state_dict(), h_resolution, w_resolution, vision_stride_size, design_details)
 
@@ -290,20 +291,26 @@ class PromptLearner(nn.Module):
 class MaplePromptLearner(nn.Module):
     def __init__(self, num_class, dataset_name, dtype, token_embedding):
         super().__init__()
-        ctx_init = "A photo of a Y Y X person."
-        reduced_ctx_dim = 50
-        ctx_dim = 512
-        vis_dim = 768
-        ctx_init = ctx_init.replace("_", " ")
-        n_ctx = 4
+        self.is_TeD = True
+        if self.is_TeD:
+            ctx_init = "A photo of a Y Y X person."
+            ctx_dim = 512
+            ctx_init = ctx_init.replace("_", " ")
+            n_ctx = 4
+            n_cls_ctx_per_id = 1
+            n_cls_ctx = 2
+        else:
+            ctx_init = "A photo of a Y Y X X X person."
+            ctx_dim = 50
+            ctx_init = ctx_init.replace("_", " ")
+            n_ctx = 4
+            n_cls_ctx_per_id = 3
+            n_cls_ctx = 2
         
-        tokenized_prompts = clip.tokenize(ctx_init).cuda() 
+        tokenized_prompts = clip.tokenize(ctx_init).cuda()
         with torch.no_grad():
             embedding = token_embedding(tokenized_prompts).type(dtype) 
         self.tokenized_prompts = tokenized_prompts  # torch.Tensor
-
-        n_cls_ctx_per_id = 1
-        n_cls_ctx = 2
 
         # -------------------------------------------------------------------------------------
         cls_vectors_per_id = torch.empty(num_class, n_cls_ctx_per_id, ctx_dim, dtype=dtype)
@@ -315,12 +322,7 @@ class MaplePromptLearner(nn.Module):
         nn.init.normal_(cls_vector, std=0.02)
         self.cls_vector = nn.Parameter(cls_vector)
 
-        # -------------------------------------------------------------------------------------
-        # self.proj_per_id = nn.Linear(reduced_ctx_dim, 512)
-        # self.text_proj = nn.Linear(reduced_ctx_dim, 512)
-        # -------------------------------------------------------------------------------------
-
-        print('MaPLe design: Multi-modal Prompt Learning')
+        print('TeD design: Text-Deep Prompt Learning')
 
         self.compound_prompts_depth = 9
         self.compound_prompts_text = nn.ParameterList([
@@ -338,14 +340,17 @@ class MaplePromptLearner(nn.Module):
         for prompt in self.compound_per_id_prompts_text:
             nn.init.normal_(prompt, std=0.02)
         # -------------------------------------------------------------------------------------
-        # self.compound_prompt_projections = nn.ModuleList([
-        #     nn.Linear(reduced_ctx_dim, 512)
-        #     for _ in range(self.compound_prompts_depth - 1)
-        # ])
-        # self.compound_prompt_projections_per_id = nn.ModuleList([
-        #     nn.Linear(reduced_ctx_dim, 512)
-        #     for _ in range(self.compound_prompts_depth - 1)
-        # ])
+        if not self.is_TeD:
+            self.proj_per_id = nn.Linear(ctx_dim, 512)
+            self.text_proj = nn.Linear(ctx_dim, 512)
+            self.compound_prompt_projections = nn.ModuleList([
+                nn.Linear(ctx_dim, 512)
+                for _ in range(self.compound_prompts_depth - 1)
+            ])
+            self.compound_prompt_projections_per_id = nn.ModuleList([
+                nn.Linear(ctx_dim, 512)
+                for _ in range(self.compound_prompts_depth - 1)
+            ])
         # -------------------------------------------------------------------------------------
 
 
@@ -361,6 +366,10 @@ class MaplePromptLearner(nn.Module):
             cls_vector = self.cls_vector.unsqueeze(0).expand(b, -1, -1)
         prefix = self.token_prefix.expand(b, -1, -1) 
         suffix = self.token_suffix.expand(b, -1, -1) 
+
+        if not self.is_TeD:
+            cls_vector = self.text_proj(cls_vector)
+            cls_ctx_per_id = self.proj_per_id(cls_ctx_per_id)
         
         prompts = torch.cat(
             [
@@ -372,16 +381,17 @@ class MaplePromptLearner(nn.Module):
             dim=1,
         )
         
-        visual_deep_prompts = []
         text_deep_per_id_prompts = []
-        visual_deep_prompts_per_id = []
         compound_prompts_text = []
-        # for i, layer in enumerate(self.compound_prompt_projections):
-        #     compound_prompts_text.append(layer(self.compound_prompts_text[i]))
-        # for i, layer in enumerate(self.compound_prompt_projections_per_id):
-        #     text_deep_per_id_prompts.append(layer(self.compound_per_id_prompts_text[i][label]))
-
-        for i in range(self.compound_prompts_depth-1):
-            text_deep_per_id_prompts.append(self.compound_per_id_prompts_text[i][label])
+        if not self.is_TeD:
+            for i, layer in enumerate(self.compound_prompt_projections):
+                compound_prompts_text.append(layer(self.compound_prompts_text[i]))
+            for i, layer in enumerate(self.compound_prompt_projections_per_id):
+                text_deep_per_id_prompts.append(layer(self.compound_per_id_prompts_text[i][label]))
+        else:
+            for i in range(self.compound_prompts_depth-1):
+                text_deep_per_id_prompts.append(self.compound_per_id_prompts_text[i][label])
+            for i in range(self.compound_prompts_depth-1):
+                compound_prompts_text.append((self.compound_prompts_text[i]))
         # --------------------------------------------------------------------------------
-        return prompts, self.compound_prompts_text, text_deep_per_id_prompts
+        return prompts, compound_prompts_text, text_deep_per_id_prompts
