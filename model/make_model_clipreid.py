@@ -31,7 +31,7 @@ def weights_init_classifier(m):
             nn.init.constant_(m.bias, 0.0)
 
 
-class MaPLeTextEncoder(nn.Module):
+class TeDTextEncoder(nn.Module):
     def __init__(self, clip_model):
         super().__init__()
         self.transformer = clip_model.transformer
@@ -78,7 +78,7 @@ class TextEncoder(nn.Module):
 class build_transformer(nn.Module):
     def __init__(self, num_classes, camera_num, view_num, cfg):
         super(build_transformer, self).__init__()
-        self.trainer = 'MaPLe'
+        self.trainer = 'TeD'
         self.use_lora = cfg.MODEL.USE_LORA
         self.model_name = cfg.MODEL.NAME
         self.cos_layer = cfg.MODEL.COS_LAYER
@@ -118,8 +118,6 @@ class build_transformer(nn.Module):
 
         if self.use_lora:
             self.list_lora_layers = apply_lora(cfg, self.image_encoder, clip_model)
-        # if cfg.eval_only:
-        #     load_lora(cfg, list_lora_layers)
 
         if cfg.MODEL.SIE_CAMERA and cfg.MODEL.SIE_VIEW:
             self.cv_embed = nn.Parameter(torch.zeros(camera_num * view_num, self.in_planes))
@@ -135,17 +133,17 @@ class build_transformer(nn.Module):
             print('camera number is : {}'.format(view_num))
 
         dataset_name = cfg.DATASETS.NAMES
-        if self.trainer == 'MaPLe':
-            self.prompt_learner = MaplePromptLearner(num_classes, dataset_name, clip_model.dtype, clip_model.token_embedding)
-            self.text_encoder = MaPLeTextEncoder(clip_model)
+        if self.trainer == 'TeD':
+            self.prompt_learner = TeDPromptLearner(num_classes, dataset_name, clip_model.dtype, clip_model.token_embedding)
+            self.text_encoder = TeDTextEncoder(clip_model)
         else:
             self.prompt_learner = PromptLearner(num_classes, dataset_name, clip_model.dtype, clip_model.token_embedding)
             self.text_encoder = TextEncoder(clip_model)
 
     def forward(self, x = None, label=None, pids=None, all_gender=None, get_image = False, get_text = False, cam_label= None, view_label=None):
-        maple = True if self.trainer == 'MaPLe' else False
+        ted = True if self.trainer == 'TeD' else False
         if get_text == True:
-            if maple:
+            if ted:
                 prompts, deep_compound_prompts_text, cls_ctx_per_id = self.prompt_learner(label)
                 text_features = self.text_encoder(prompts, self.prompt_learner.tokenized_prompts, deep_compound_prompts_text, cls_ctx_per_id)
                 return text_features
@@ -232,8 +230,8 @@ def load_clip_to_cpu(backbone_name, h_resolution, w_resolution, vision_stride_si
                       "vision_depth": 0,
                       "language_depth": 0, "vision_ctx": 0,
                       "language_ctx": 0,
-                      "maple_length": 2,
-                      "maple_length_per_id": 1}
+                      "ted_length": 2,
+                      "ted_length_per_id": 1}
 
     model = clip.build_model(state_dict or model.state_dict(), h_resolution, w_resolution, vision_stride_size, design_details)
 
@@ -288,7 +286,7 @@ class PromptLearner(nn.Module):
 
         return prompts 
 
-class MaplePromptLearner(nn.Module):
+class TeDPromptLearner(nn.Module):
     def __init__(self, num_class, dataset_name, dtype, token_embedding):
         super().__init__()
         self.is_TeD = True

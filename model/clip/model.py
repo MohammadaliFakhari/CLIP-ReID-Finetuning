@@ -188,7 +188,7 @@ class ResidualAttentionBlock(nn.Module):
         x = x + self.mlp(self.ln_2(x))
         return x
     
-class ResidualAttentionBlock_MaPLe(nn.Module):
+class ResidualAttentionBlock_TeD(nn.Module):
     def __init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor = None, design_details=None,
                  text_layer=False, i=0):
         super().__init__()
@@ -202,8 +202,8 @@ class ResidualAttentionBlock_MaPLe(nn.Module):
         self.ln_2 = LayerNorm(d_model)
         self.text_layer = text_layer
         self.attn_mask = attn_mask
-        self.compound_prompt_nctx = design_details['maple_length']
-        self.compound_prompt_nctx_per_id = design_details['maple_length_per_id']
+        self.compound_prompt_nctx = design_details['ted_length']
+        self.compound_prompt_nctx_per_id = design_details['ted_length_per_id']
         if i == 0:
             self.first_layer = True
         else:
@@ -264,9 +264,9 @@ class Transformer(nn.Module):
         self.layers = layers
         # Implements respective encoder blocks for a given design choice
         current_trainer = design_details['trainer']
-        if current_trainer == 'MaPLe':
+        if current_trainer == 'TeD':
             self.resblocks = nn.Sequential(
-                *[ResidualAttentionBlock_MaPLe(width, heads, attn_mask, design_details, text_layer, i)
+                *[ResidualAttentionBlock_TeD(width, heads, attn_mask, design_details, text_layer, i)
                   for i in range(layers)])
         else:
             # Corresponds to default CoOp or CoCoOp
@@ -319,7 +319,7 @@ class VisionTransformer(nn.Module):
         return x11, x12, xproj
 
 
-class VisionTransformer_MaPLe(nn.Module):
+class VisionTransformer_TeD(nn.Module):
     def __init__(self, h_resolution: int, w_resolution: int, patch_size: int, width: int, layers: int, heads: int, output_dim: int,
                  design_details):
         super().__init__()
@@ -410,8 +410,8 @@ class CLIP(nn.Module):
             )
         else:
             vision_heads = vision_width // 64
-            if trainer == "MaPLe":
-                self.visual = VisionTransformer_MaPLe(
+            if trainer == "TeD":
+                self.visual = VisionTransformer_TeD(
                     h_resolution = h_resolution,
                     w_resolution = w_resolution,
                     patch_size=vision_patch_size,
