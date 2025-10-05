@@ -7,6 +7,11 @@ This project was submitted as a Bachelor of Science thesis in Computer Engineeri
 
 [![GitHub stars](https://img.shields.io/github/stars/MohammadaliFakhari/CLIP-ReID-Finetuning.svg?style=social&label=Star&maxAge=2592000)](https://github.com/MohammadaliFakhari/CLIP-ReID-Finetuning/stargazers)
 
+## Scheme of proposal methods
+![](Imgs/YY_X-deep.png)
+![](Imgs/YY_X-shallow.png)
+![](Imgs/YY_XXX-dimensionreduction.png)
+
 ## 📝 About the Project
 
 This work is based on the original **CLIP-ReID** codebase, which can be found at [Syliz517/CLIP-ReID](https://github.com/Syliz517/CLIP-ReID.git). The new code and modifications for this thesis were built upon that foundation.
